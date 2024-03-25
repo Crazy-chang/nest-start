@@ -2019,7 +2019,7 @@
     "shebang-command" "^2.0.0"
     "which" "^2.0.1"
 
-"dayjs@^1.11.9":
+"dayjs@^1.11.10", "dayjs@^1.11.9":
   "integrity" "sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ=="
   "resolved" "https://registry.npmmirror.com/dayjs/-/dayjs-1.11.10.tgz"
   "version" "1.11.10"
