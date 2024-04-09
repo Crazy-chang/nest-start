@@ -1,7 +1,7 @@
 import { Injectable, Logger, HttpStatus, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 // TypeORM 的 Repository 是提供给我们进行数据库操作的一个抽象层，它封装了对实体的基本 CRUD 操作
-import { Repository } from 'typeorm';
+import { Repository, Like, Not } from 'typeorm';
 import { TestEntity } from './entity/test.entity';
 
 /**  Repository
@@ -58,11 +58,53 @@ export class TestService {
       : new HttpException('无法删除，请稍候在试', HttpStatus.BAD_REQUEST);
   }
 
-  // 修改
+  // 修改 title
   async update(data) {
     const old = await this.findOne(data.id);
-    const res = await this.testRepository.merge(old, { title: data.title });
+    const res = await this.testRepository.merge(old, {
+      title: data.title,
+      orderId: data.orderId,
+    });
 
     await this.testRepository.save(res);
   }
+
+  // 排序  order: { [key: string]: 'DESC' 降序 | 'ASC'升序 }
+  async orderList() {
+    return await this.testRepository.find({
+      order: {
+        id: 'DESC', // 按照id降序
+        // createTime: 'ASC' // 按照创建时间升序
+      },
+    });
+  }
+
+  // 模糊查询
+  async fuzzyQuery(data) {
+    return await this.testRepository.find({
+      where: {
+        id: Not(data.id), // Not就是id不为 * 的
+        title: Like(`%${data.title}%`), // title 里带有 * 的
+      },
+    });
+  }
+
+  // findAndCount   实现title模糊搜索以分页
+  async count(query) {
+    const { title, pageNo, pageSize } = query;
+    const [list, total] = await this.testRepository.findAndCount({
+      select: ['title', 'id', 'createTime', 'orderId'], // 返回的字段
+      where: {
+        title: Like(`%${title}%`),
+      },
+      skip: (pageNo - 1) * pageSize,
+      take: pageSize,
+    });
+    return {
+      list,
+      total,
+    };
+  }
+
+  // findByIds 传入id数组查询
 }

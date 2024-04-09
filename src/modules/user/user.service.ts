@@ -18,10 +18,7 @@ export class UserService {
     }
     return {
       status: 200,
-      data: {
-        token: '66666666666',
-        userName: name,
-      },
+      userName: name,
     };
   }
 }

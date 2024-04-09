@@ -56,4 +56,22 @@ export class TestController {
   update(@Body() data) {
     return this.testService.update(data);
   }
+
+  // 获取排序列表
+  @Get('order/list')
+  getOrder() {
+    return this.testService.orderList();
+  }
+
+  // 模糊搜索
+  @Post('fuzzy/list')
+  fuzzyList(@Body() data) {
+    return this.testService.fuzzyQuery(data);
+  }
+
+  // 查询及分页
+  @Get('count/list')
+  countList(@Body() data) {
+    return this.testService.count(data);
+  }
 }
