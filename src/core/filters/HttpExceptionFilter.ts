@@ -23,10 +23,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    console.log('exception=', exception);
-
     // 全部错误信息
     let message = exception.message;
+
+    if (message === 'Unauthorized') {
+      message = 'token已过期';
+    }
     // Logger 系统日志
     Logger.log('错误提示', message);
 

@@ -21,4 +21,14 @@ export class UserService {
       userName,
     };
   }
+
+  userMsg() {
+    return {
+      code: 200,
+      data: {
+        userName: 'admin',
+      },
+      message: 'success',
+    };
+  }
 }

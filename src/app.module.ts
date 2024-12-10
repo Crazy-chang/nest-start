@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getConfig } from './core/common/index';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScoringrecordModule } from './modules/scoringrecord/scoringrecord.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AuthModule,
     UserModule,
     TestModule,
+    ScoringrecordModule,
     // 连接数据库
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
