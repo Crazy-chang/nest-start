@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getConfig } from './core/common/index';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScoringrecordModule } from './modules/scoringrecord/scoringrecord.module';
+import { SpiderModule } from './modules/spider/spider.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ScoringrecordModule } from './modules/scoringrecord/scoringrecord.modul
       },
       inject: [ConfigService],
     }),
+    SpiderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
