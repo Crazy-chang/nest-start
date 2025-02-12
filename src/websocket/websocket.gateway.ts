@@ -61,7 +61,7 @@ export class WebsocketGateway
     // 给房间内所有成员发送消息
     this.server
       .to(data.room)
-      .emit('message', { type: 'join', content: `欢迎${data.name}加入房间`, userName: data.name });
+      .emit('message', { type: 'join', content: `加入了房间`, userName: data.name });
 
     this.handleGetRoomUsers({ roomId: data.room });
   }
@@ -70,13 +70,18 @@ export class WebsocketGateway
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() room: string,
+    @MessageBody() data: { room: string; name: string },
   ) {
-    for (const room in this.rooms) {
-      this.rooms[room] = this.rooms[room].filter((c) => c !== client);
+    // for (const item in this.rooms) {
+    //   this.rooms[item] = this.rooms[item].filter((c) => c !== client);
+    // }
+    if(this.rooms[data.room]) {
+      this.rooms[data.room] = this.rooms[data.room].filter((c) => c !== client);
     }
-    client.to(room).emit('message', { type: 'leave', content: '离开了房间' });
-    console.log(`Client ${client.id} leave room ${room}`);
+    this.server
+      .to(data.room)
+      .emit('message', { type: 'leave', content: '离开了房间', userName: data.name });
+    console.log(`Client ${client.id} leave room ${data.room}`);
   }
 
   // 发送消息
