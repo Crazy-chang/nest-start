@@ -21,6 +21,8 @@ export class WebsocketGateway
 
   // 存储每个房间的连接客户端，房间id为客户端创建的时间戳
   private rooms: { [key: string]: Socket[] } = {};
+  // 存储每个房间，记录房间内用户列表
+  private roomsUsers: { [key: string]: any[] } = {};
 
   afterInit(server: Server) {
     console.log('WebSocket Gateway initialized', server);
@@ -44,6 +46,7 @@ export class WebsocketGateway
   ) {
     if (!this.rooms[data.room]) {
       this.rooms[data.room] = [];
+      this.roomsUsers[data.room] = [];
     }
     if (this.rooms[data.room].includes(client)) {
       // 已经在房间里
@@ -51,19 +54,22 @@ export class WebsocketGateway
     }
 
     this.rooms[data.room].push(client);
+    this.roomsUsers[data.room].push({ id: client.id, userName: data.name });
     client.join(data.room);
     // client.emit('message', { content: '你进入了房间' });
 
     console.log(`Client ${client.id} joined room: ${data.room}`);
 
-    // 给房间内除自己外的其他所有成员发送消息
-    // client.to(room).emit('message', { type: 'join', content: '欢迎加入房间' });
     // 给房间内所有成员发送消息
-    this.server
-      .to(data.room)
-      .emit('message', { type: 'join', content: `加入了房间`, userName: data.name });
+    this.sendRoomAllUsers('join', data.room, data.name);
 
-    this.handleGetRoomUsers({ roomId: data.room });
+    // this.server.to(data.room) -- 不生效？
+    // this.server
+    //   .to(data.room)
+    //   .emit('message', { type: 'join', content: `加入了房间`, userName: data.name });
+
+    // 给房间内除自己外的其他所有成员发送消息 -- 不生效?
+    // client.to(data.room).emit('message', { type: 'join', content: '欢迎加入房间' });
   }
 
   // 离开房间
@@ -72,19 +78,46 @@ export class WebsocketGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { room: string; name: string },
   ) {
-    // for (const item in this.rooms) {
-    //   this.rooms[item] = this.rooms[item].filter((c) => c !== client);
-    // }
-    if(this.rooms[data.room]) {
+    if (this.rooms[data.room]) {
       this.rooms[data.room] = this.rooms[data.room].filter((c) => c !== client);
+      this.roomsUsers[data.room] = this.roomsUsers[data.room].filter((its) => {
+        return its.userName !== data.name;
+      });
+      // 发送给房间其他人
+      this.sendRoomAllUsers('leave', data.room, data.name);
+      // 如果房间为空，删除房间
+      if (this.rooms[data.room].length === 0) {
+        delete this.rooms[data.room];
+        delete this.roomsUsers[data.room];
+      }
     }
-    this.server
-      .to(data.room)
-      .emit('message', { type: 'leave', content: '离开了房间', userName: data.name });
+    // 不生效？
+    // this.server
+    //   .to(data.room)
+    //   .emit('message', { type: 'leave', content: '离开了房间', userName: data.name });
     console.log(`Client ${client.id} leave room ${data.room}`);
   }
 
+  /** 给房间内所有成员发送消息
+   * @param type 事件类型
+   * @param roomId 房间id
+   * @param userName 用户名
+   * @returns void
+   * */
+  sendRoomAllUsers(type: string, roomId: string, userName: string) {
+    for (let i = 0; i < this.rooms[roomId].length; i++) {
+      const clientData = this.rooms[roomId][i];
+      clientData.emit('message', {
+        type,
+        userName,
+        content: ``,
+        roomUserList: this.roomsUsers[roomId],
+      });
+    }
+  }
+
   // 发送消息
+  // @SubscribeMessage('sendMessage')
   handleMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { room: string; content: string },
@@ -92,13 +125,9 @@ export class WebsocketGateway
     console.log(`Client ${client.id} send message ${data}`);
     const roomObj = this.rooms[data.room];
     if (roomObj) {
-      // roomObj.forEach((c: any) => {
-      //   console.log('发送消息', c);
-      //   if (c.readyState === 1) {
-      //     // 1 表示 WebSocket.OPEN
-      //     c.emit('message', { content: data.content });
-      //   }
-      // });
+      // this.server
+      //   .to(data.room)
+      //   .emit('message', { type: 'message', content: data.content, userName: client.id });
     }
   }
 
