@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './core/filters/HttpExceptionFilter';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 declare const module: any;
 
@@ -16,15 +17,18 @@ const corsOptions: CorsOptions = {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // 使用全局CORS配置
   app.enableCors(corsOptions);
   // 全局注册错误的过滤器
   app.useGlobalFilters(new HttpExceptionFilter());
   // 全局拦截器
   // app.useGlobalInterceptors(new ResponseInterceptor())
-  //全局管道  
+  //全局管道
   // app.useGlobalPipes(new ValidationPipe({ transform: true }))
+
+  // 配置 WebSocket
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.listen(3000);
 

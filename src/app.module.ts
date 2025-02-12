@@ -9,6 +9,7 @@ import { getConfig } from './core/common/index';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScoringrecordModule } from './modules/scoringrecord/scoringrecord.module';
 import { SpiderModule } from './modules/spider/spider.module';
+import { WebsocketGateway } from './websocket/websocket.gateway';
 
 @Module({
   imports: [
@@ -46,6 +47,6 @@ import { SpiderModule } from './modules/spider/spider.module';
     SpiderModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, WebsocketGateway],
 })
 export class AppModule {}

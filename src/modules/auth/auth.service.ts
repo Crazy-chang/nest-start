@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 // import { UserService } from '../user/user.service';
 type User = {
   userName: string;
-  password: string;
+  passWord: string;
 };
 
 @Injectable()
@@ -16,15 +16,15 @@ export class AuthService {
    * 用户登录
    * @param user
    */
-  login({ userName, password }) {
-    console.log(userName, password);
-    if (!userName || !password) {
+  login(user: User) {
+    const { userName, passWord } = user;
+    if (!userName || !passWord) {
       return new HttpException('用户名或密码错误', HttpStatus.BAD_REQUEST);
     }
     if (userName != 'admin') {
       return new HttpException('账号不存在', -1);
     }
-    if (password != '666666') {
+    if (passWord != '666666') {
       return new HttpException('密码错误', -1);
     }
     return {
