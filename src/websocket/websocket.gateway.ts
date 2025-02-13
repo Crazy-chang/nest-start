@@ -19,7 +19,7 @@ export class WebsocketGateway
   // 获取 socket 服务器的实例
   @WebSocketServer() server: Server;
 
-  // 存储每个房间的连接客户端，房间id为客户端创建的时间戳
+  // 存储每个房间的连接客户端
   private rooms: { [key: string]: Socket[] } = {};
   // 存储每个房间，记录房间内用户列表
   private roomsUsers: { [key: string]: any[] } = {};
@@ -42,34 +42,36 @@ export class WebsocketGateway
   @SubscribeMessage('joinRoom')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { room: string; name: string },
+    @MessageBody() data: { room?: string; name: string },
   ) {
-    if (!this.rooms[data.room]) {
-      this.rooms[data.room] = [];
-      this.roomsUsers[data.room] = [];
+    // 房间id：当前时间戳
+    const roomID = data.room ? data.room : `${new Date().getTime()}`;
+
+    if (!this.rooms[roomID]) {
+      this.rooms[roomID] = [];
+      this.roomsUsers[roomID] = [];
     }
-    if (this.rooms[data.room].includes(client)) {
-      // 已经在房间里
+    if (this.rooms[roomID].includes(client)) {
+      client.emit('message', { type: 'message', content: '你已经在房间里!' });
       return;
     }
 
-    this.rooms[data.room].push(client);
-    this.roomsUsers[data.room].push({ id: client.id, userName: data.name });
-    client.join(data.room);
-    // client.emit('message', { content: '你进入了房间' });
+    this.rooms[roomID].push(client);
+    this.roomsUsers[roomID].push({ id: client.id, userName: data.name });
+    client.join(roomID);
 
-    console.log(`Client ${client.id} joined room: ${data.room}`);
+    console.log(`Client ${client.id} joined room: ${roomID}`);
 
     // 给房间内所有成员发送消息
-    this.sendRoomAllUsers('join', data.room, data.name);
+    this.sendRoomAllUsers(data.room ? 'join' : 'create', roomID, data.name);
 
-    // this.server.to(data.room) -- 不生效？
+    // this.server.to(roomID) -- 不生效？
     // this.server
-    //   .to(data.room)
+    //   .to(roomID)
     //   .emit('message', { type: 'join', content: `加入了房间`, userName: data.name });
 
     // 给房间内除自己外的其他所有成员发送消息 -- 不生效?
-    // client.to(data.room).emit('message', { type: 'join', content: '欢迎加入房间' });
+    // client.to(roomID).emit('message', { type: 'join', content: '欢迎加入房间' });
   }
 
   // 离开房间
@@ -109,22 +111,32 @@ export class WebsocketGateway
       const clientData = this.rooms[roomId][i];
       clientData.emit('message', {
         type,
+        roomId,
         userName,
-        content: ``,
         roomUserList: this.roomsUsers[roomId],
       });
     }
   }
 
   // 发送消息
-  // @SubscribeMessage('sendMessage')
+  @SubscribeMessage('sendMessage')
   handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { room: string; content: string },
+    @MessageBody() data: { room: string; content: string; name: string },
   ) {
-    console.log(`Client ${client.id} send message ${data}`);
-    const roomObj = this.rooms[data.room];
-    if (roomObj) {
+    console.log(`Client ${data.name} send message ${data.content} `);
+    const roomList = this.rooms[data.room];
+    if (roomList) {
+      for (let i = 0; i < roomList.length; i++) {
+        const clientData = roomList[i];
+        clientData.emit('message', {
+          type: 'message',
+          roomId: data.room,
+          userName: data.name,
+          content: data.content,
+        });
+      }
+
       // this.server
       //   .to(data.room)
       //   .emit('message', { type: 'message', content: data.content, userName: client.id });
@@ -148,4 +160,4 @@ export class WebsocketGateway
 
 // @SubscribeMessage('xxx') 的主要作用是定义一个方法来监听和处理来自客户端发送的 'xxx' 事件
 
-// message 枚举类型：'join' | 'leave' | 'message' | 'roomUserNum'
+// message 枚举类型：'create' ｜ 'join' | 'leave' | 'message' | 'roomUserNum'
